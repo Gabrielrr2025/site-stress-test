@@ -1,94 +1,38 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Resultado do Análise</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f6f9;
-      color: #333;
-      padding: 20px;
-    }
-    .dashboard {
-      background-color: #fff;
-      border-radius: 10px;
-      padding: 30px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      max-width: 800px;
-      margin: auto;
-    }
-    h1 {
-      color: #1e3d59;
-      text-align: center;
-    }
-    .item {
-      margin-bottom: 20px;
-      border-bottom: 1px solid #ddd;
-      padding-bottom: 10px;
-    }
-    .item h2 {
-      color: #2a4b7c;
-    }
-    .tipo-ativo {
-      padding-left: 20px;
-    }
-    .voltar {
-      display: block;
-      text-align: center;
-      margin-top: 30px;
-    }
-    .voltar a {
-      background-color: #2a4b7c;
-      color: white;
-      text-decoration: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Resultado da Análise</title>
+    <style>
+        body { font-family: Arial; padding: 40px; text-align: center; }
+        .box { margin: 20px auto; max-width: 600px; text-align: left; }
+        .erro { color: red; font-weight: bold; }
+        a { text-decoration: none; color: blue; }
+    </style>
 </head>
 <body>
-  <div class="dashboard">
-    <h1>Resultado da Análise da Carteira</h1>
+    <h1>Resultado da Análise</h1>
 
-    {% if resultado %}
-      <div class="item">
-        <h2>📅 Data:</h2>
-        <p>{{ resultado['Data'] }}</p>
-      </div>
-
-      <div class="item">
-        <h2>💰 Patrimônio Líquido Total:</h2>
-        <p>{{ resultado['PL Total'] }}</p>
-      </div>
-
-      <div class="item">
-        <h2>🏆 Maior ativo por % no PL:</h2>
-        <p>{{ resultado['Maior Ativo'] }}</p>
-      </div>
-
-      <div class="item">
-        <h2>📦 Quantidade de ativos distintos:</h2>
-        <p>{{ resultado['Ativos Distintos'] }}</p>
-      </div>
-
-      <div class="item">
-        <h2>📊 Composição por Tipo de Ativo:</h2>
-        <div class="tipo-ativo">
-          <ul>
-          {% for tipo, pct in resultado['Composição por Tipo'].items() %}
-            <li><strong>{{ tipo }}:</strong> {{ pct }}%</li>
-          {% endfor %}
-          </ul>
-        </div>
-      </div>
+    {% if error %}
+        <p class="erro">{{ error }}</p>
     {% else %}
-      <p>Erro ao processar os dados.</p>
+        <div class="box">
+            <p><strong>Data da Análise:</strong> {{ resultado.Data }}</p>
+            <p><strong>Tipo de Arquivo:</strong> {{ resultado.Extensão }}</p>
+            <p><strong>Patrimônio Líquido:</strong> {{ resultado['PL Total'] }}</p>
+            <p><strong>Maior Ativo:</strong> {{ resultado['Maior Ativo'] }}</p>
+            <p><strong>Ativos Distintos:</strong> {{ resultado['Ativos Distintos'] }}</p>
+
+            <h3>Composição por Tipo de Ativo:</h3>
+            <ul>
+                {% for tipo, percentual in resultado['Composição por Tipo'].items() %}
+                    <li>{{ tipo }}: {{ percentual }}%</li>
+                {% endfor %}
+            </ul>
+        </div>
     {% endif %}
 
-    <div class="voltar">
-      <a href="{{ url_for('index') }}">⬅ Voltar</a>
-    </div>
-  </div>
+    <br><br>
+    <a href="/">← Voltar</a>
 </body>
 </html>
