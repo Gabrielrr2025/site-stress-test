@@ -14,9 +14,11 @@ ALLOWED_EXTENSIONS = {'xml', 'csv', 'xlsx', 'xls'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+from datetime import datetime  # já está lá em cima
+
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', datetime=datetime)
 
 @app.route('/upload', methods=['POST'])
 def upload():
