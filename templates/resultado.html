@@ -1,38 +1,28 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Resultado da Análise</title>
-    <style>
-        body { font-family: Arial; padding: 40px; text-align: center; }
-        .box { margin: 20px auto; max-width: 600px; text-align: left; }
-        .erro { color: red; font-weight: bold; }
-        a { text-decoration: none; color: blue; }
-    </style>
+    <title>Resultado</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-    <h1>Resultado da Análise</h1>
+<body class="bg-light text-center py-5">
+    <div class="container">
+        <h2 class="mb-4">Resultado da Análise</h2>
 
-    {% if error %}
-        <p class="erro">{{ error }}</p>
-    {% else %}
-        <div class="box">
-            <p><strong>Data da Análise:</strong> {{ resultado.Data }}</p>
-            <p><strong>Tipo de Arquivo:</strong> {{ resultado.Extensão }}</p>
-            <p><strong>Patrimônio Líquido:</strong> {{ resultado['PL Total'] }}</p>
-            <p><strong>Maior Ativo:</strong> {{ resultado['Maior Ativo'] }}</p>
-            <p><strong>Ativos Distintos:</strong> {{ resultado['Ativos Distintos'] }}</p>
-
-            <h3>Composição por Tipo de Ativo:</h3>
-            <ul>
-                {% for tipo, percentual in resultado['Composição por Tipo'].items() %}
-                    <li>{{ tipo }}: {{ percentual }}%</li>
-                {% endfor %}
+        {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% else %}
+            <ul class="list-group text-start">
+                <li class="list-group-item"><strong>PL Total:</strong> {{ resultado['PL Total'] }}</li>
+                <li class="list-group-item"><strong>Maior Ativo:</strong> {{ resultado['Maior Ativo'] }}</li>
+                <li class="list-group-item"><strong>Ativos Distintos:</strong> {{ resultado['Ativos Distintos'] }}</li>
+                <li class="list-group-item"><strong>Composição por Tipo:</strong> {{ resultado['Composição por Tipo'] }}</li>
+                <li class="list-group-item"><strong>Estresse Simulado:</strong> {{ resultado['Estresse Simulado'] }}</li>
+                <li class="list-group-item text-success">{{ resultado['Mensagem'] }}</li>
             </ul>
-        </div>
-    {% endif %}
+        {% endif %}
 
-    <br><br>
-    <a href="/">← Voltar</a>
+        <a href="/" class="btn btn-secondary mt-4">Voltar</a>
+    </div>
 </body>
 </html>
