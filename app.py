@@ -1,5 +1,4 @@
-# app.py
-from flask import Flask, request, render_template, send_file, redirect, url_for
+from flask import Flask, request, render_template, redirect, url_for
 import pandas as pd
 import os
 from werkzeug.utils import secure_filename
@@ -11,7 +10,6 @@ import re
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
 ALLOWED_EXTENSIONS = {'xml', 'csv', 'xlsx', 'xls', 'pdf'}
 
 def allowed_file(filename):
@@ -37,49 +35,45 @@ def upload():
     ext = filename.rsplit('.', 1)[1].lower()
     df = pd.DataFrame(columns=['Nome do Ativo', 'Tipo de Ativo', 'Quantidade', 'Valor de Mercado', '% PL'])
     pl_total = 0
+    resultado = {}
 
     try:
         if ext in ['xlsx', 'xls']:
             df = pd.read_excel(filepath)
-            df['% PL'] = pd.to_numeric(df.get('% PL', 0), errors='coerce')
-            df['Valor de Mercado'] = pd.to_numeric(df.get('Valor de Mercado', 0), errors='coerce')
-            pl_total = df['Valor de Mercado'].sum()
-
         elif ext == 'csv':
             df = pd.read_csv(filepath)
-            df['% PL'] = pd.to_numeric(df.get('% PL', 0), errors='coerce')
-            df['Valor de Mercado'] = pd.to_numeric(df.get('Valor de Mercado', 0), errors='coerce')
-            pl_total = df['Valor de Mercado'].sum()
-
         elif ext == 'xml':
             tree = ET.parse(filepath)
             root = tree.getroot()
             pl_text = root.findtext('.//PL')
             if pl_text:
                 pl_total = float(pl_text.replace(',', '.'))
-
         elif ext == 'pdf':
             doc = fitz.open(filepath)
-            text = ''
-            for page in doc:
-                text += page.get_text()
+            text = ''.join([page.get_text() for page in doc])
             match = re.search(r'PATRIMÔNIO\s+([\d.,]+)', text.upper())
             if match:
                 pl_total = float(match.group(1).replace('.', '').replace(',', '.'))
 
-        maior_ativo = df.loc[df['% PL'].idxmax()]['Nome do Ativo'] if '% PL' in df and not df.empty else 'Desconhecido'
-        ativos_distintos = df['Nome do Ativo'].nunique() if 'Nome do Ativo' in df else 'N/A'
+        if not df.empty:
+            df['% PL'] = pd.to_numeric(df.get('% PL', 0), errors='coerce')
+            df['Valor de Mercado'] = pd.to_numeric(df.get('Valor de Mercado', 0), errors='coerce')
+            pl_total = df['Valor de Mercado'].sum()
 
+        maior_ativo = df.loc[df['% PL'].idxmax()]['Nome do Ativo'] if not df.empty and '% PL' in df else 'Desconhecido'
+        ativos_distintos = df['Nome do Ativo'].nunique() if 'Nome do Ativo' in df else 'N/A'
         por_tipo = df.groupby('Tipo de Ativo')['Valor de Mercado'].sum() if 'Tipo de Ativo' in df else pd.Series()
         por_tipo_percentual = (por_tipo / pl_total * 100).round(2).to_dict() if not por_tipo.empty else {}
 
+        impacto_estresse = round(pl_total * 0.03, 2)
         resultado = {
             'PL Total': f"R$ {pl_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
             'Maior Ativo': maior_ativo,
             'Ativos Distintos': ativos_distintos,
             'Composição por Tipo': por_tipo_percentual,
             'Data': datetime.now().strftime('%d/%m/%Y'),
-            'Extensão': ext.upper()
+            'Estresse Simulado': f'R$ {impacto_estresse:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'Mensagem': 'Simulamos uma queda de 3% na carteira para fins de estresse.'
         }
 
         return render_template('resultado.html', resultado=resultado)
