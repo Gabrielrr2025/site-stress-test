@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-
+from io import BytesIO
 st.title("Cálculo de VaR e Estresse - Modo Web")
 
 # Volatilidades padrão
