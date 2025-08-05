@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from io import BytesIO
+import openpyxl
+
 st.title("Cálculo de VaR e Estresse - Modo Web")
 
 # Volatilidades padrão
@@ -108,3 +110,35 @@ st.download_button(
     file_name="relatorio_respostas_var_estresse.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
+# --- Gerar relatório formatado com base no template oficial ---
+
+template_path = "Template - Informações Perfil Mensal.xlsx"
+output = BytesIO()
+
+# Carregar o template e respostas
+wb = openpyxl.load_workbook(template_path)
+ws = wb.active
+
+linha_perguntas = 3
+linha_respostas = 6
+
+# Preencher o Excel com as respostas
+for col in range(3, ws.max_column + 1):
+    pergunta_template = ws.cell(row=linha_perguntas, column=col).value
+    if pergunta_template:
+        for _, row in df_respostas.iterrows():
+            if row["Pergunta"].strip()[:50] in pergunta_template.strip()[:50]:
+                ws.cell(row=linha_respostas, column=col).value = row["Resposta"]
+                break
+
+# Salvar em memória para download
+wb.save(output)
+output.seek(0)
+
+st.download_button(
+    label="Baixar Relatório no Padrão da B3/CVM",
+    data=output,
+    file_name="relatorio_estresse_formatado_template.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
+
