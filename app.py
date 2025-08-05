@@ -85,3 +85,26 @@ if st.button("Calcular"):
 
     st.download_button("Baixar CSV - VaR", csv_var, "resultado_var.csv", "text/csv")
     st.download_button("Baixar CSV - Estresse", csv_estresse, "resultado_estresse.csv", "text/csv")
+    import pandas as pd
+from io import BytesIO
+
+# ... (após calcular os resultados)
+
+# Criar o DataFrame de perguntas e respostas
+df_respostas = pd.DataFrame({
+    "Pergunta": [...],  # lista de perguntas
+    "Resposta": [...]   # lista de respostas calculadas
+})
+
+# Gerar Excel em memória
+excel_output = BytesIO()
+df_respostas.to_excel(excel_output, index=False, engine='openpyxl')
+excel_output.seek(0)
+
+# Botão de download no app
+st.download_button(
+    label="Baixar Relatório de Respostas (XLSX)",
+    data=excel_output,
+    file_name="relatorio_respostas_var_estresse.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
