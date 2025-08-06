@@ -8,11 +8,17 @@ st.markdown("<h1 style='text-align: center;'>📊 Cálculo de VaR e Estresse</h1
 st.markdown("---")
 
 # Campos iniciais
-cnpj = st.text_input("CNPJ do Fundo")
-nome_fundo = st.text_input("Nome do Fundo (Portfólio)")
-data_referencia = st.date_input("Data de Referência")
+cnpj = st.text_input("CNPJ do Fundo *")
+nome_fundo = st.text_input("Nome do Fundo (Portfólio) *")
+data_referencia = st.date_input("Data de Referência *")
 
-pl = st.number_input("Digite o Patrimônio Líquido (R$)", min_value=0.0, format="%.2f")
+pl = st.number_input("Patrimônio Líquido (R$) *", min_value=0.0, format="%.2f")
+
+# Validação de campos obrigatórios
+campos_obrigatorios_preenchidos = bool(cnpj.strip() and nome_fundo.strip() and pl > 0)
+
+if not campos_obrigatorios_preenchidos:
+    st.info("⚠️ **Campos obrigatórios (*):** CNPJ, Nome do Fundo, Data de Referência e Patrimônio Líquido devem ser preenchidos para realizar os cálculos.")
 horizonte_dias = st.selectbox("Horizonte de VaR (dias)", [1, 10, 21])
 conf_level_label = st.selectbox("Nível de confiança", ["95%", "99%"])
 conf_level, z_score = (0.95, 1.65) if conf_level_label == "95%" else (0.99, 2.33)
