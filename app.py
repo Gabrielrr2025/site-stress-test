@@ -39,7 +39,23 @@ for classe, vol in volatilidades_padrao.items():
             "vol_anual": vol
         })
 
-if st.button("Calcular"):
+# Validação da alocação
+total_alocacao = sum(item['%PL'] for item in carteira)
+pode_calcular = True
+
+if total_alocacao > 0:
+    if total_alocacao > 100:
+        st.error(f"❌ Alocação total: {total_alocacao:.1f}% (excede 100%)")
+        st.error("🚫 **Não é possível calcular! A alocação não pode exceder 100% do portfólio.**")
+        pode_calcular = False
+    elif total_alocacao < 100:
+        st.warning(f"⚠️ Alocação total: {total_alocacao:.1f}% (menor que 100%)")
+        st.info(f"💡 Restam {100 - total_alocacao:.1f}% para alocar no portfólio.")
+    else:
+        st.success(f"✅ Alocação total: {total_alocacao:.1f}% - Portfólio completo!")
+
+# Só permite calcular se alocação for válida (≤ 100%) e > 0
+if st.button("Calcular") and total_alocacao > 0 and pode_calcular:
     for item in carteira:
         vol_diaria = item['vol_anual'] / np.sqrt(252)
         var_percentual = z_score * vol_diaria * np.sqrt(horizonte_dias)
@@ -150,7 +166,7 @@ if st.button("Calcular"):
     excel_output.seek(0)
 
     st.download_button(
-        label="📅 Baixar Relatório de Respostas (XLSX)",
+        label="📥 Baixar Relatório de Respostas (XLSX)",
         data=excel_output,
         file_name="relatorio_respostas_var_estresse.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -158,24 +174,32 @@ if st.button("Calcular"):
 
     # Gerar Excel formatado no template oficial
     template_path = "Template - Informacoes Perfil Mensal.xlsx"
-    output = BytesIO()
-    wb = openpyxl.load_workbook(template_path)
-    ws = wb.active
+    
+    try:
+        output = BytesIO()
+        wb = openpyxl.load_workbook(template_path)
+        ws = wb.active
 
-    for col in range(3, ws.max_column + 1):
-        pergunta_template = ws.cell(row=3, column=col).value
-        if pergunta_template:
-            for _, row in df_respostas.iterrows():
-                if row["Pergunta"].strip()[:50] in pergunta_template.strip()[:50]:
-                    ws.cell(row=6, column=col).value = row["Resposta"]
-                    break
+        for col in range(3, ws.max_column + 1):
+            pergunta_template = ws.cell(row=3, column=col).value
+            if pergunta_template:
+                for _, row in df_respostas.iterrows():
+                    if row["Pergunta"].strip()[:50] in pergunta_template.strip()[:50]:
+                        ws.cell(row=6, column=col).value = row["Resposta"]
+                        break
 
-    wb.save(output)
-    output.seek(0)
+        wb.save(output)
+        output.seek(0)
 
-    st.download_button(
-        label="📅 Baixar Relatório no Padrão da B3/CVM",
-        data=output,
-        file_name="relatorio_estresse_formatado_template.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+        st.download_button(
+            label="📥 Baixar Relatório no Padrão da B3/CVM",
+            data=output,
+            file_name="relatorio_estresse_formatado_template.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        
+    except FileNotFoundError:
+        st.warning("⚠️ Template oficial não encontrado. Use o relatório simples acima.")
+    except Exception as e:
+        st.error(f"❌ Erro ao processar template: {str(e)}")
+        st.info("💡 Use o relatório simples como alternativa.")
