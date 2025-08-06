@@ -81,64 +81,76 @@ if st.button("Calcular"):
     st.markdown("### Resultado - Estresse por Fator de Risco")
     st.dataframe(df_estresse)
 
-    # Download dos arquivos
-    csv_var = df_var.to_csv(index=False).encode('utf-8')
-    csv_estresse = df_estresse.to_csv(index=False).encode('utf-8')
+    # -------------------------
+    # Gerar respostas automáticas
+    # -------------------------
+    resposta_ibov = df_estresse[df_estresse['Fator de Risco'] == 'Ibovespa']['Impacto % do PL'].values[0]
+    resposta_juros = df_estresse[df_estresse['Fator de Risco'] == 'Juros-Pré']['Impacto % do PL'].values[0]
+    resposta_dolar = df_estresse[df_estresse['Fator de Risco'] == 'Dólar']['Impacto % do PL'].values[0]
 
-    st.download_button("Baixar CSV - VaR", csv_var, "resultado_var.csv", "text/csv")
-    st.download_button("Baixar CSV - Estresse", csv_estresse, "resultado_estresse.csv", "text/csv")
-    import pandas as pd
-from io import BytesIO
+    df_respostas = pd.DataFrame({
+        "Pergunta": [
+            "Qual é o VAR (Valor de risco) de um dia como percentual do PL calculado para 21 dias úteis e 95% de confiança?",
+            "Qual classe de modelos foi utilizada para o cálculo do VAR reportado na questão anterior?",
+            "Considerando os cenários de estresse definidos pela BM&FBOVESPA para o fator primitivo de risco (FPR) IBOVESPA que gere o pior resultado para o fundo, indique o cenário utilizado.",
+            "Considerando os cenários de estresse definidos pela BM&FBOVESPA para o fator primitivo de risco (FPR) Juros-Pré que gere o pior resultado para o fundo, indique o cenário utilizado.",
+            "Considerando os cenários de estresse definidos pela BM&FBOVESPA para o fator primitivo de risco (FPR) Cupom Cambial que gere o pior resultado para o fundo, indique o cenário utilizado.",
+            "Considerando os cenários de estresse definidos pela BM&FBOVESPA para o fator primitivo de risco (FPR) Dólar que gere o pior resultado para o fundo, indique o cenário utilizado.",
+            "Considerando os cenários de estresse definidos pela BM&FBOVESPA para o fator primitivo de risco (FPR) Outros que gere o pior resultado para o fundo, indique o cenário utilizado.",
+            "Qual a variação diária percentual esperada para o valor da cota?",
+            "Qual a variação diária percentual esperada para o valor da cota do fundo no pior cenário de estresse definido pelo seu administrador?",
+            "Qual a variação diária percentual esperada para o patrimônio do fundo caso ocorra uma variação negativa de 1% na taxa anual de juros (pré)?",
+            "Qual a variação diária percentual esperada para o patrimônio do fundo caso ocorra uma variação negativa de 1% na taxa de câmbio (US$/Real)?",
+            "Qual a variação diária percentual esperada para o patrimônio do fundo caso ocorra uma variação negativa de 1% no preço das ações (IBOVESPA)?"
+        ],
+        "Resposta": [
+            f"{(var_total/pl)*100:.4f}%",
+            "Paramétrico - Delta Normal",
+            "Cenário 1: Queda de 15% no IBOVESPA",
+            "Cenário 2: Alta de 200 bps na taxa de juros",
+            "Cenário 3: Queda de 1% no cupom cambial",
+            "Cenário 4: Queda de 5% no dólar",
+            "Cenário 5: Queda de 3% em outros ativos",
+            f"{df_var['VaR_%'].mean():.4f}%",
+            f"{df_estresse['Impacto % do PL'].min():.4f}%",
+            f"{resposta_juros:.4f}%",
+            f"{resposta_dolar:.4f}%",
+            f"{resposta_ibov:.4f}%"
+        ]
+    })
 
-# ... (após calcular os resultados)
+    # Gerar Excel com perguntas e respostas
+    excel_output = BytesIO()
+    df_respostas.to_excel(excel_output, index=False, engine='openpyxl')
+    excel_output.seek(0)
 
-# Criar o DataFrame de perguntas e respostas
-df_respostas = pd.DataFrame({
-    "Pergunta": [...],  # lista de perguntas
-    "Resposta": [...]   # lista de respostas calculadas
-})
+    st.download_button(
+        label="Baixar Relatório de Respostas (XLSX)",
+        data=excel_output,
+        file_name="relatorio_respostas_var_estresse.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
-# Gerar Excel em memória
-excel_output = BytesIO()
-df_respostas.to_excel(excel_output, index=False, engine='openpyxl')
-excel_output.seek(0)
+    # Preencher template B3/CVM
+    template_path = "Template - Informações Perfil Mensal.xlsx"
+    output = BytesIO()
+    wb = openpyxl.load_workbook(template_path)
+    ws = wb.active
 
-# Botão de download no app
-st.download_button(
-    label="Baixar Relatório de Respostas (XLSX)",
-    data=excel_output,
-    file_name="relatorio_respostas_var_estresse.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
-# --- Gerar relatório formatado com base no template oficial ---
+    for col in range(3, ws.max_column + 1):
+        pergunta_template = ws.cell(row=3, column=col).value
+        if pergunta_template:
+            for _, row in df_respostas.iterrows():
+                if row["Pergunta"].strip()[:50] in pergunta_template.strip()[:50]:
+                    ws.cell(row=6, column=col).value = row["Resposta"]
+                    break
 
-template_path = "Template - Informações Perfil Mensal.xlsx"
-output = BytesIO()
+    wb.save(output)
+    output.seek(0)
 
-# Carregar o template e respostas
-wb = openpyxl.load_workbook(template_path)
-ws = wb.active
-
-linha_perguntas = 3
-linha_respostas = 6
-
-# Preencher o Excel com as respostas
-for col in range(3, ws.max_column + 1):
-    pergunta_template = ws.cell(row=linha_perguntas, column=col).value
-    if pergunta_template:
-        for _, row in df_respostas.iterrows():
-            if row["Pergunta"].strip()[:50] in pergunta_template.strip()[:50]:
-                ws.cell(row=linha_respostas, column=col).value = row["Resposta"]
-                break
-
-# Salvar em memória para download
-wb.save(output)
-output.seek(0)
-
-st.download_button(
-    label="Baixar Relatório no Padrão da B3/CVM",
-    data=output,
-    file_name="relatorio_estresse_formatado_template.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
-
+    st.download_button(
+        label="Baixar Relatório no Padrão da B3/CVM",
+        data=output,
+        file_name="relatorio_estresse_formatado_template.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
