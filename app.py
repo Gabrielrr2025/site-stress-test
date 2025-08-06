@@ -85,10 +85,27 @@ if st.button("Calcular"):
     st.markdown("### Resultado - Estresse por Fator de Risco")
     st.dataframe(df_estresse)
 
-    # Respostas CVM/B3
-    resposta_ibov = df_estresse[df_estresse['Fator de Risco'] == 'Ibovespa']['Impacto % do PL'].values[0]
-    resposta_juros = df_estresse[df_estresse['Fator de Risco'] == 'Juros-Pré']['Impacto % do PL'].values[0]
-    resposta_dolar = df_estresse[df_estresse['Fator de Risco'] == 'Dólar']['Impacto % do PL'].values[0]
+    # Simular choques de -1% nos fatores individualmente
+    choque_fixos = {
+        "Ibovespa": -0.01,
+        "Juros-Pré": -0.01,
+        "Dólar": -0.01
+    }
+
+    resposta_ibov = sum(
+        item['%PL'] / 100 * choque_fixos["Ibovespa"]
+        for item in carteira if "ibovespa" in item["classe"].lower()
+    ) * 100
+
+    resposta_juros = sum(
+        item['%PL'] / 100 * choque_fixos["Juros-Pré"]
+        for item in carteira if "juros" in item["classe"].lower()
+    ) * 100
+
+    resposta_dolar = sum(
+        item['%PL'] / 100 * choque_fixos["Dólar"]
+        for item in carteira if "câmbio" in item["classe"].lower() or "dólar" in item["classe"].lower()
+    ) * 100
 
     df_respostas = pd.DataFrame({
         "Pergunta": [
@@ -127,20 +144,20 @@ if st.button("Calcular"):
         ]
     })
 
-    # Gerar Excel de respostas simples
+    # Gerar Excel simples
     excel_output = BytesIO()
     df_respostas.to_excel(excel_output, index=False, engine='openpyxl')
     excel_output.seek(0)
 
     st.download_button(
-        label="📥 Baixar Relatório de Respostas (XLSX)",
+        label="📅 Baixar Relatório de Respostas (XLSX)",
         data=excel_output,
         file_name="relatorio_respostas_var_estresse.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-    # Gerar Excel formatado no padrão B3/CVM
-    template_path = "Template - Informações Perfil Mensal.xlsx"
+    # Gerar Excel formatado no template oficial
+    template_path = "Template - Informacoes Perfil Mensal.xlsx"
     output = BytesIO()
     wb = openpyxl.load_workbook(template_path)
     ws = wb.active
@@ -157,7 +174,7 @@ if st.button("Calcular"):
     output.seek(0)
 
     st.download_button(
-        label="📥 Baixar Relatório no Padrão da B3/CVM",
+        label="📅 Baixar Relatório no Padrão da B3/CVM",
         data=output,
         file_name="relatorio_estresse_formatado_template.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
