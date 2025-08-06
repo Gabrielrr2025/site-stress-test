@@ -10,6 +10,7 @@ st.markdown("---")
 # Campos iniciais
 cnpj = st.text_input("CNPJ do Fundo")
 nome_fundo = st.text_input("Nome do Fundo (Portfólio)")
+data_referencia = st.date_input("Data de Referência")
 
 pl = st.number_input("Digite o Patrimônio Líquido (R$)", min_value=0.0, format="%.2f")
 horizonte_dias = st.selectbox("Horizonte de VaR (dias)", [1, 10, 21])
@@ -89,41 +90,42 @@ if st.button("Calcular"):
     resposta_juros = df_estresse[df_estresse['Fator de Risco'] == 'Juros-Pré']['Impacto % do PL'].values[0]
     resposta_dolar = df_estresse[df_estresse['Fator de Risco'] == 'Dólar']['Impacto % do PL'].values[0]
 
-    df_respostas = pd.DataFrame({
-        "Pergunta": [
-            "CNPJ do Fundo",
-            "Portfolio",
-            "Qual é o VAR (Valor de risco) de um dia como percentual do PL calculado para 21 dias úteis e 95% de confiança?",
-            "Qual classe de modelos foi utilizada para o cálculo do VAR reportado na questão anterior?",
-            "Considerando os cenários de estresse definidos pela BM&FBOVESPA para o fator primitivo de risco (FPR) IBOVESPA que gere o pior resultado para o fundo, indique o cenário utilizado.",
-            "Considerando os cenários de estresse definidos pela BM&FBOVESPA para o fator primitivo de risco (FPR) Juros-Pré que gere o pior resultado para o fundo, indique o cenário utilizado.",
-            "Considerando os cenários de estresse definidos pela BM&FBOVESPA para o fator primitivo de risco (FPR) Cupom Cambial que gere o pior resultado para o fundo, indique o cenário utilizado.",
-            "Considerando os cenários de estresse definidos pela BM&FBOVESPA para o fator primitivo de risco (FPR) Dólar que gere o pior resultado para o fundo, indique o cenário utilizado.",
-            "Considerando os cenários de estresse definidos pela BM&FBOVESPA para o fator primitivo de risco (FPR) Outros que gere o pior resultado para o fundo, indique o cenário utilizado.",
-            "Qual a variação diária percentual esperada para o valor da cota?",
-            "Qual a variação diária percentual esperada para o valor da cota do fundo no pior cenário de estresse definido pelo seu administrador?",
-            "Qual a variação diária percentual esperada para o patrimônio do fundo caso ocorra uma variação negativa de 1% na taxa anual de juros (pré)?",
-            "Qual a variação diária percentual esperada para o patrimônio do fundo caso ocorra uma variação negativa de 1% na taxa de câmbio (US$/Real)?",
-            "Qual a variação diária percentual esperada para o patrimônio do fundo caso ocorra uma variação negativa de 1% no preço das ações (IBOVESPA)?"
-        ],
-        "Resposta": [
-            cnpj,
-            nome_fundo,
-            f"{(var_total/pl)*100:.4f}%",
-            "Paramétrico - Delta Normal",
-            "Cenário 1: Queda de 15% no IBOVESPA",
-            "Cenário 2: Alta de 200 bps na taxa de juros",
-            "Cenário 3: Queda de 1% no cupom cambial",
-            "Cenário 4: Queda de 5% no dólar",
-            "Cenário 5: Queda de 3% em outros ativos",
-            f"{df_var['VaR_%'].mean():.4f}%",
-            f"{df_estresse['Impacto % do PL'].min():.4f}%",
-            f"{resposta_juros:.4f}%",
-            f"{resposta_dolar:.4f}%",
-            f"{resposta_ibov:.4f}%"
-        ]
-    })
-
+   df_respostas = pd.DataFrame({
+    "Pergunta": [
+        "CNPJ do Fundo",
+        "Portfolio",
+        "Data de Referência",
+        "Qual é o VAR (Valor de risco) de um dia como percentual do PL calculado para 21 dias úteis e 95% de confiança?",
+        "Qual classe de modelos foi utilizada para o cálculo do VAR reportado na questão anterior?",
+        "Considerando os cenários de estresse definidos pela BM&FBOVESPA para o fator primitivo de risco (FPR) IBOVESPA que gere o pior resultado para o fundo, indique o cenário utilizado.",
+        "Considerando os cenários de estresse definidos pela BM&FBOVESPA para o fator primitivo de risco (FPR) Juros-Pré que gere o pior resultado para o fundo, indique o cenário utilizado.",
+        "Considerando os cenários de estresse definidos pela BM&FBOVESPA para o fator primitivo de risco (FPR) Cupom Cambial que gere o pior resultado para o fundo, indique o cenário utilizado.",
+        "Considerando os cenários de estresse definidos pela BM&FBOVESPA para o fator primitivo de risco (FPR) Dólar que gere o pior resultado para o fundo, indique o cenário utilizado.",
+        "Considerando os cenários de estresse definidos pela BM&FBOVESPA para o fator primitivo de risco (FPR) Outros que gere o pior resultado para o fundo, indique o cenário utilizado.",
+        "Qual a variação diária percentual esperada para o valor da cota?",
+        "Qual a variação diária percentual esperada para o valor da cota do fundo no pior cenário de estresse definido pelo seu administrador?",
+        "Qual a variação diária percentual esperada para o patrimônio do fundo caso ocorra uma variação negativa de 1% na taxa anual de juros (pré)?",
+        "Qual a variação diária percentual esperada para o patrimônio do fundo caso ocorra uma variação negativa de 1% na taxa de câmbio (US$/Real)?",
+        "Qual a variação diária percentual esperada para o patrimônio do fundo caso ocorra uma variação negativa de 1% no preço das ações (IBOVESPA)?"
+    ],
+    "Resposta": [
+        cnpj,
+        nome_fundo,
+        data_referencia.strftime("%d/%m/%Y"),
+        f"{(var_total/pl)*100:.4f}%",
+        "Paramétrico - Delta Normal",
+        "Cenário 1: Queda de 15% no IBOVESPA",
+        "Cenário 2: Alta de 200 bps na taxa de juros",
+        "Cenário 3: Queda de 1% no cupom cambial",
+        "Cenário 4: Queda de 5% no dólar",
+        "Cenário 5: Queda de 3% em outros ativos",
+        f"{df_var['VaR_%'].mean():.4f}%",
+        f"{df_estresse['Impacto % do PL'].min():.4f}%",
+        f"{resposta_juros:.4f}%",
+        f"{resposta_dolar:.4f}%",
+        f"{resposta_ibov:.4f}%"
+    ]
+})
     # Gerar Excel de respostas simples
     excel_output = BytesIO()
     df_respostas.to_excel(excel_output, index=False, engine='openpyxl')
