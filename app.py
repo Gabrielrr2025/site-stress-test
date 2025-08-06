@@ -173,7 +173,7 @@ if st.button("Calcular") and total_alocacao > 0 and pode_calcular:
     )
 
     # Gerar Excel formatado no template oficial
-    template_path = "Template - Informacoes Perfil Mensal.xlsx"
+    template_path = "template_perfil_mensal.xlsx"
     
     try:
         output = BytesIO()
