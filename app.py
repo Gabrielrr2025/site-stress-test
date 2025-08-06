@@ -4,7 +4,7 @@ import numpy as np
 from io import BytesIO
 import openpyxl
 
-st.title("Cálculo de VaR e Estresse - Modo Web")
+st.title("Cálculo de VaR e Estresse")
 
 # Volatilidades padrão
 volatilidades_padrao = {
