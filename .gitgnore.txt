@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+.env
+.DS_Store
+.ipynb_checkpoints/
+.vscode/
+*.xls
+*.xlsx
+*.xlsm
+*.zip
