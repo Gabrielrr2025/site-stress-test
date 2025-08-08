@@ -1,3 +1,1 @@
-git add .
-git commit -m "Deploy: Modern UI with correlations"
-git push origin main
+web: streamlit run app.py --server.port=$PORT --server.enableCORS=false
