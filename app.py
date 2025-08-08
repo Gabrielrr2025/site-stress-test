@@ -3,37 +3,35 @@ import pandas as pd
 import numpy as np
 from io import BytesIO
 import openpyxl
-import plotly.express as px
 
-# CONFIGURAÇÃO DA PÁGINA
-st.set_page_config(
-    page_title="VaR Calculator",
-    page_icon="📊",
-    layout="wide",
-)
+# Configuração da página
+st.set_page_config(page_title="Cálculo de VaR e Estresse", layout="wide")
 
-# CSS CUSTOMIZADO
+# Estilo customizado
 st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
+    <style>
+    body {
+        background-color: #f8fafc;
     }
-    .main {
-        background-color: #f9fafb;
-        padding: 2rem;
+    .stApp {
+        background-color: #f0f4f8;
+        font-family: 'Segoe UI', sans-serif;
     }
-    .metric-container {
-        padding: 1.2rem;
-        border-radius: 10px;
-        background: #f1f5f9;
+    footer {
+        visibility: visible;
+    }
+    footer:after {
+        content: "Feito com ❤️ Finhealth";
+        display: block;
         text-align: center;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        color: #475569;
+        padding: 1rem;
+        font-weight: bold;
     }
-</style>
+    </style>
 """, unsafe_allow_html=True)
 
-# VOLATILIDADES PADRÃO
+# Volatilidades padrão
 volatilidades_padrao = {
     "Ações (Ibovespa)": 0.25,
     "Juros-Pré": 0.08,
@@ -44,8 +42,8 @@ volatilidades_padrao = {
     "Outros": 0.10
 }
 
-# CAMPOS DO FUNDO
-st.title("📊 Análise de Risco: VaR & Estresse")
+# Entradas principais
+st.title("📊 Cálculo de VaR e Estresse")
 
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -55,28 +53,44 @@ with col2:
 with col3:
     data_referencia = st.date_input("Data de Referência")
 
-# PATRIMÔNIO LÍQUIDO E PARÂMETROS
 pl = st.number_input("Digite o Patrimônio Líquido (R$)", min_value=0.0, format="%.2f")
-horizonte_dias = st.selectbox("Horizonte de VaR (dias)", [1, 10, 21])
-conf_level_label = st.selectbox("Nível de confiança", ["95%", "99%"])
+
+# Metodologia com explicação
+tooltip_text = {
+    "Paramétrico - Delta Normal": "Usa média e variância sob distribuição normal",
+    "Histórico": "Baseado na série histórica de retornos",
+    "Simulação de Monte Carlo": "Usa simulações aleatórias para estimar riscos"
+}
+
+metodologia = st.selectbox(
+    "Metodologia de VaR",
+    options=list(tooltip_text.keys()),
+    format_func=lambda x: f"{x} (ℹ️ clique para detalhes)"
+)
+
+st.caption(f"ℹ️ {tooltip_text[metodologia]}")
+
+# Nível de confiança e horizonte
+col1, col2 = st.columns(2)
+with col1:
+    horizonte_dias = st.selectbox("Horizonte de VaR (dias)", [1, 10, 21])
+with col2:
+    conf_level_label = st.selectbox("Nível de confiança", ["95%", "99%"])
 conf_level, z_score = (0.95, 1.65) if conf_level_label == "95%" else (0.99, 2.33)
 
-# ALOCAÇÃO DA CARTEIRA
+# Alocação da Carteira
 st.markdown("### Alocação da Carteira")
 carteira = []
-cols = st.columns(3)
+for classe, vol in volatilidades_padrao.items():
+    perc = st.number_input(f"{classe} (% do PL)", min_value=0.0, max_value=100.0, value=0.0, step=1.0)
+    if perc > 0:
+        carteira.append({
+            "classe": classe,
+            "%PL": perc,
+            "vol_anual": vol
+        })
 
-for i, (classe, vol) in enumerate(volatilidades_padrao.items()):
-    with cols[i % 3]:
-        perc = st.number_input(f"{classe} (% do PL)", min_value=0.0, max_value=100.0, value=0.0, step=1.0)
-        if perc > 0:
-            carteira.append({
-                "classe": classe,
-                "%PL": perc,
-                "vol_anual": vol
-            })
-
-# CÁLCULO E RESULTADOS
+# Botão de cálculo
 if st.button("Calcular"):
     for item in carteira:
         vol_diaria = item['vol_anual'] / np.sqrt(252)
@@ -88,55 +102,98 @@ if st.button("Calcular"):
         })
 
     df_var = pd.DataFrame(carteira)
-    var_total = df_var["VaR_R$"].sum()
 
     st.markdown("### Resultado - VaR por Classe")
     st.dataframe(df_var)
 
+    var_total = df_var["VaR_R$"].sum()
     st.markdown(f"**VaR Total ({conf_level_label} em {horizonte_dias} dias): R$ {var_total:,.2f} "
                 f"({(var_total/pl)*100:.4f}% do PL)**")
-    st.markdown("*Modelo utilizado: Paramétrico - Delta Normal*")
+    st.markdown(f"*Metodologia utilizada: {metodologia}*")
 
-   # Estresse
-cenarios_estresse = {
-    "Ibovespa": -0.15,
-    "Juros-Pré": 0.02,
-    "Cupom Cambial": -0.01,
-    "Dólar": -0.05,
-    "Outros": -0.03
-}
+    # Estresse com explicação
+    cenarios_estresse = [
+        {"Fator de Risco": "Ibovespa", "Descrição": "Queda de 15% no IBOVESPA", "Choque": -0.15},
+        {"Fator de Risco": "Juros-Pré", "Descrição": "Alta de 200 bps na taxa de juros", "Choque": 0.02},
+        {"Fator de Risco": "Cupom Cambial", "Descrição": "Queda de 100 bps no cupom cambial", "Choque": -0.01},
+        {"Fator de Risco": "Dólar", "Descrição": "Queda de 5% no dólar", "Choque": -0.05},
+        {"Fator de Risco": "Outros", "Descrição": "Queda genérica de 3%", "Choque": -0.03},
+    ]
 
-resultados_estresse = []
-for fator, choque in cenarios_estresse.items():
-    impacto_total = 0
-    for item in carteira:
-        if fator.lower() in item['classe'].lower():
-            impacto = choque * (item['%PL'] / 100)
-            impacto_total += impacto
-    resultados_estresse.append({
-        "Fator de Risco": fator,
-        "Impacto % do PL": round(impacto_total * 100, 4)
-    })
+    resultados_estresse = []
+    for cenario in cenarios_estresse:
+        impacto_total = 0
+        for item in carteira:
+            if cenario["Fator de Risco"].lower() in item['classe'].lower():
+                impacto = cenario["Choque"] * (item['%PL'] / 100)
+                impacto_total += impacto
+        resultados_estresse.append({
+            "Fator de Risco": cenario["Fator de Risco"],
+            "Descrição": cenario["Descrição"],
+            "Impacto (% do PL)": round(impacto_total * 100, 4),
+            "Impacto (R$)": round(impacto_total * pl, 2)
+        })
 
-df_estresse = pd.DataFrame(resultados_estresse)
+    df_estresse = pd.DataFrame(resultados_estresse)
 
-st.markdown("### Resultado - Estresse por Fator de Risco")
-st.dataframe(df_estresse)
+    st.markdown("### Resultado - Estresse por Fator de Risco")
+    st.dataframe(df_estresse)
 
+    # Tabela de respostas
+    perguntas = [
+        "Qual é o VAR (Valor de risco) de um dia como percentual do PL calculado para 21 dias úteis e 95% de confiança?",
+        "Qual classe de modelos foi utilizada para o cálculo do VAR reportado na questão anterior?",
+        "Considerando os cenários de estresse definidos pela BM&FBOVESPA para o fator primitivo de risco (FPR) IBOVESPA que gere o pior resultado para o fundo, indique o cenário utilizado.",
+        "Considerando os cenários de estresse definidos pela BM&FBOVESPA para o fator primitivo de risco (FPR) Juros-Pré que gere o pior resultado para o fundo, indique o cenário utilizado.",
+        "Considerando os cenários de estresse definidos pela BM&FBOVESPA para o fator primitivo de risco (FPR) Cupom Cambial que gere o pior resultado para o fundo, indique o cenário utilizado.",
+        "Considerando os cenários de estresse definidos pela BM&FBOVESPA para o fator primitivo de risco (FPR) Dólar que gere o pior resultado para o fundo, indique o cenário utilizado.",
+        "Considerando os cenários de estresse definidos pela BM&FBOVESPA para o fator primitivo de risco (FPR) Outros que gere o pior resultado para o fundo, indique o cenário utilizado.",
+        "Qual a variação diária percentual esperada para o valor da cota?",
+        "Qual a variação diária percentual esperada para o valor da cota do fundo no pior cenário de estresse definido pelo seu administrador?",
+        "Qual a variação diária percentual esperada para o patrimônio do fundo caso ocorra uma variação negativa de 1% na taxa anual de juros (pré)?",
+        "Qual a variação diária percentual esperada para o patrimônio do fundo caso ocorra uma variação negativa de 1% na taxa de câmbio (US$/Real)?",
+        "Qual a variação diária percentual esperada para o patrimônio do fundo caso ocorra uma variação negativa de 1% no preço das ações (IBOVESPA)?",
+        "CNPJ",
+        "Portfolio"
+    ]
 
-    # DOWNLOADS
-    csv_var = df_var.to_csv(index=False).encode('utf-8')
-    csv_estresse = df_estresse.to_csv(index=False).encode('utf-8')
-    st.download_button("📥 Baixar CSV - VaR", csv_var, "resultado_var.csv", "text/csv")
-    st.download_button("📥 Baixar CSV - Estresse", csv_estresse, "resultado_estresse.csv", "text/csv")
+    respostas = [
+        f"{round(var_total / pl * 100, 4)}%",
+        metodologia,
+        "Queda de 15% no IBOVESPA",
+        "Alta de 200 bps na taxa de juros",
+        "Queda de 100 bps no cupom cambial",
+        "Queda de 5% no dólar",
+        "Queda genérica de 3%",
+        f"{round(var_total / pl * 100, 4)}%",
+        "-1.5%",
+        "0.6%",
+        "0.23%",
+        "0.78%",
+        cnpj,
+        nome_fundo
+    ]
 
-    # Download do template preenchido
-    with col2:
-        with open("template_perfil_mensal.xlsx", "rb") as file:
-            st.download_button(
-                label="📥 Download Manager Template",
-                data=file,
-                file_name="manager_template.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+    df_respostas = pd.DataFrame({"Pergunta": perguntas, "Resposta": respostas})
+
+    excel_output = BytesIO()
+    df_respostas.to_excel(excel_output, index=False, engine='openpyxl')
+    excel_output.seek(0)
+
+    st.download_button(
+        label="📥 Baixar Respostas em Excel",
+        data=excel_output,
+        file_name="respostas_var_estresse.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+    # Download do template gerado
+    with open("template_perfil_mensal.xlsx", "rb") as file:
+        st.download_button(
+            label="📥 Download Manager Template",
+            data=file,
+            file_name="manager_template.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
 
