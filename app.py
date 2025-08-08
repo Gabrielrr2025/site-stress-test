@@ -97,31 +97,32 @@ if st.button("Calcular"):
                 f"({(var_total/pl)*100:.4f}% do PL)**")
     st.markdown("*Modelo utilizado: Paramétrico - Delta Normal*")
 
-    # CENÁRIOS DE ESTRESSE
-    st.markdown("### Resultado - Estresse por Fator de Risco")
-    cenarios_estresse = {
-        "Ibovespa": -0.15,
-        "Juros-Pré": 0.02,
-        "Cupom Cambial": -0.01,
-        "Dólar": -0.05,
-        "Outros": -0.03
-    }
+   # Estresse
+cenarios_estresse = {
+    "Ibovespa": -0.15,
+    "Juros-Pré": 0.02,
+    "Cupom Cambial": -0.01,
+    "Dólar": -0.05,
+    "Outros": -0.03
+}
 
-    resultados_estresse = []
-    for fator, choque in cenarios_estresse.items():
-        impacto_total = 0
-        for item in carteira:
-            if fator.lower() in item['classe'].lower():
-                impacto = choque * (item['%PL'] / 100)
-                impacto_total += impacto
-        resultados_estresse.append({
-            "Fator de Risco": fator,
-            "Impacto % do PL": round(impacto_total * 100, 4),
-            "Cenário utilizado": f"Choque de {choque*100:.0f}%"
-        })
+resultados_estresse = []
+for fator, choque in cenarios_estresse.items():
+    impacto_total = 0
+    for item in carteira:
+        if fator.lower() in item['classe'].lower():
+            impacto = choque * (item['%PL'] / 100)
+            impacto_total += impacto
+    resultados_estresse.append({
+        "Fator de Risco": fator,
+        "Impacto % do PL": round(impacto_total * 100, 4)
+    })
 
-    df_estresse = pd.DataFrame(resultados_estresse)
-    st.dataframe(df_estresse)
+df_estresse = pd.DataFrame(resultados_estresse)
+
+st.markdown("### Resultado - Estresse por Fator de Risco")
+st.dataframe(df_estresse)
+
 
     # DOWNLOADS
     csv_var = df_var.to_csv(index=False).encode('utf-8')
