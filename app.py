@@ -6,7 +6,7 @@ from io import BytesIO
 import openpyxl
 import datetime
 
-# =============================
+# ==============================
 # CONFIGURAÇÃO DO SITE E CSS
 # =============================
 st.set_page_config(page_title="VaR App Finhealth", layout="wide")
